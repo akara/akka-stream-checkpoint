@@ -1,7 +1,7 @@
 package akka.stream.checkpoint.javadsl
 
 import akka.NotUsed
-import akka.stream.checkpoint.{CheckpointBackend, CheckpointStage}
+import akka.stream.checkpoint.{CheckpointBackend, CheckpointStage, SystemClock}
 import akka.stream.javadsl
 
 object Checkpoint {
@@ -16,6 +16,6 @@ object Checkpoint {
     * @return a newly created checkpoint Flow
     */
   def create[T](name: String, backend: CheckpointBackend): javadsl.Flow[T, T, NotUsed] =
-    javadsl.Flow.fromGraph(CheckpointStage[T](repository = backend.createRepository(name)))
+    javadsl.Flow.fromGraph(CheckpointStage[T](repository = backend.createRepository(name), clock = SystemClock))
 
 }

@@ -3,7 +3,7 @@ package akka.stream.checkpoint
 import akka.stream._
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 
-private[checkpoint] final case class CheckpointStage[T](repository: CheckpointRepository) extends GraphStage[FlowShape[T, T]] {
+private[checkpoint] final case class CheckpointStage[T](repository: CheckpointRepository, clock: Clock) extends GraphStage[FlowShape[T, T]] {
   val in = Inlet[T]("Checkpoint.in")
   val out = Outlet[T]("Checkpoint.out")
   override val shape = FlowShape(in, out)
@@ -17,14 +17,14 @@ private[checkpoint] final case class CheckpointStage[T](repository: CheckpointRe
       var lastPushed: Long = 0L
 
       override def preStart(): Unit = {
-        lastPulled = System.nanoTime()
+        lastPulled = clock.nanoTime
         lastPushed = lastPulled
       }
 
       override def onPush(): Unit = {
         push(out, grab(in))
 
-        val now = System.nanoTime()
+        val now = clock.nanoTime
         repository.markPush(now - lastPulled, (lastPulled - lastPushed) * 100 / (now - lastPushed))
         lastPushed = now
       }
@@ -32,7 +32,7 @@ private[checkpoint] final case class CheckpointStage[T](repository: CheckpointRe
       override def onPull(): Unit = {
         pull(in)
 
-        lastPulled = System.nanoTime()
+        lastPulled = clock.nanoTime
         repository.markPull(lastPulled - lastPushed)
       }
 

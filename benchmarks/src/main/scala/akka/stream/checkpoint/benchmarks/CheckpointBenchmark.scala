@@ -16,18 +16,18 @@ import scala.concurrent.duration._
 
 /*
 [info] Benchmark                                               (numberOfFlows)  (repositoryType)   Mode  Cnt      Score     Error   Units
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1              none  thrpt   20  13062.016 ± 130.645  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1              noop  thrpt   20   5436.104 ±  41.852  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1        dropwizard  thrpt   20   1331.207 ±  31.286  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1             kamon  thrpt   20   4700.698 ± 129.628  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5              none  thrpt   20   5392.729 ±  78.117  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5              noop  thrpt   20   1317.518 ±  19.561  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5        dropwizard  thrpt   20    282.741 ±   3.742  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5             kamon  thrpt   20   1099.806 ±  13.992  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20              none  thrpt   20   1861.865 ±  25.282  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20              noop  thrpt   20    358.336 ±   2.550  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20        dropwizard  thrpt   20     66.253 ±   1.249  ops/ms
-[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20             kamon  thrpt   20    248.267 ±   1.855  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1              none  thrpt   20  13184.014 ± 139.389  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1              noop  thrpt   20   5414.791 ±  64.548  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1        dropwizard  thrpt   20   1278.878 ±  87.234  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                1             kamon  thrpt   20   4584.435 ±  31.389  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5              none  thrpt   20   5642.095 ± 118.584  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5              noop  thrpt   20   1291.007 ±  54.667  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5        dropwizard  thrpt   20    260.106 ±   5.408  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements                5             kamon  thrpt   20   1012.013 ±  33.434  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20              none  thrpt   20   1829.584 ±  28.066  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20              noop  thrpt   20    329.244 ±  23.158  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20        dropwizard  thrpt   20     66.274 ±   1.947  ops/ms
+[info] CheckpointBenchmark.map_with_checkpoints_100k_elements               20             kamon  thrpt   20    233.347 ±   4.157  ops/ms
 */
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)

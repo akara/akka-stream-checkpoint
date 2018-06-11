@@ -1,7 +1,8 @@
 package akka.stream.checkpoint
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicLong
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -9,12 +10,17 @@ import akka.stream.testkit.scaladsl.TestSink
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{MustMatchers, WordSpec}
 
-import scala.concurrent.duration._
+import scala.collection.mutable.ListBuffer
 
 class CheckpointStageSpec extends WordSpec with MustMatchers with ScalaFutures with Eventually {
 
   implicit val system = ActorSystem("CheckpointSpec")
   implicit val materializer = ActorMaterializer()
+
+  val counterClock = new Clock {
+    val count = new AtomicLong(0L)
+    override def nanoTime: Long = count.incrementAndGet()
+  }
 
   "The Checkpoint stage" should {
     "be a pass-through stage" in {
@@ -26,86 +32,72 @@ class CheckpointStageSpec extends WordSpec with MustMatchers with ScalaFutures w
 
       val values = 1 to 5
 
-      val results = Source(values).via(CheckpointStage(noopRepo)).runWith(Sink.seq).futureValue
+      val results = Source(values).via(CheckpointStage(noopRepo, counterClock)).runWith(Sink.seq).futureValue
 
       results must ===(values)
     }
 
     "record latencies between pulls and pushes" in {
-      val pullLatency = 400.millis
-      val pushLatency = 300.millis
-
-      val tolerance   = 100.millis
-
-      val pushLatencies = new ConcurrentLinkedQueue[Long]()
-      val pullLatencies = new ConcurrentLinkedQueue[Long]()
+      val pushLatencies = ListBuffer.empty[Long]
+      val pullLatencies = ListBuffer.empty[Long]
 
       val arrayBackedRepo = new CheckpointRepository {
-        override def markPush(nanos: Long, backpressureRatio: Long): Unit = pushLatencies.offer(nanos)
-        override def markPull(nanos: Long): Unit = pullLatencies.offer(nanos)
+        override def markPush(nanos: Long, backpressureRatio: Long): Unit = pushLatencies += nanos
+        override def markPull(nanos: Long): Unit = pullLatencies += nanos
       }
 
       val (sourcePromise, probe) =
         Source.maybe[Int]
-          .via(CheckpointStage(arrayBackedRepo))
+          .via(CheckpointStage(arrayBackedRepo, counterClock))
           .toMat(TestSink.probe[Int])(Keep.both)
           .run()
 
       pullLatencies.size must ===(0)
       pushLatencies.size must ===(0)
 
-      Thread.sleep(pullLatency.toMillis)
       probe.request(1)
 
       eventually {
         pullLatencies.size must ===(1)
         pushLatencies.size must ===(0)
 
-        pullLatencies.peek must ===(pullLatency.toNanos +- tolerance.toNanos)
+        pullLatencies.head must ===(1)
       }
 
-      Thread.sleep(pushLatency.toMillis)
       sourcePromise.success(Some(42))
 
       eventually {
         pullLatencies.size must ===(1)
         pushLatencies.size must ===(1)
 
-        pushLatencies.peek must ===(pushLatency.toNanos +- tolerance.toNanos)
+        pushLatencies.head must ===(1)
       }
 
       probe.expectNext(42)
     }
 
     "record backpressure ratios at push time" in {
-      val pullLatency = 100.millis
-      val pushLatency = 900.millis
-
-      val expectedRatio = 10L
-      val tolerance     = 1L
-
-      val backpressureRatios = new ConcurrentLinkedQueue[Long]()
+      val backpressureRatios = ListBuffer.empty[Long]
 
       val arrayBackedRepo = new CheckpointRepository {
-        override def markPush(nanos: Long, backpressureRatio: Long): Unit = backpressureRatios.offer(backpressureRatio)
+        override def markPush(nanos: Long, backpressureRatio: Long): Unit = backpressureRatios += backpressureRatio
         override def markPull(nanos: Long): Unit = ()
       }
 
-      val (sourcePromise, probe) =
-        Source.maybe[Int]
-          .via(CheckpointStage(arrayBackedRepo))
-          .toMat(TestSink.probe[Int])(Keep.both)
-          .run()
+      val probe =
+        Source.single(NotUsed)
+          .via(CheckpointStage(arrayBackedRepo, counterClock))
+          .runWith(TestSink.probe[NotUsed.type])
 
-      Thread.sleep(pullLatency.toMillis)
+      eventually {
+        backpressureRatios.size must ===(0)
+      }
+
       probe.request(1)
-
-      Thread.sleep(pushLatency.toMillis)
-      sourcePromise.success(Some(42))
 
       eventually {
         backpressureRatios.size must ===(1)
-        backpressureRatios.peek must ===(expectedRatio +- tolerance)
+        backpressureRatios.head must ===(50)
       }
     }
   }
